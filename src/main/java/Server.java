@@ -18,13 +18,17 @@ public class Server {
         try (ServerSocket serverSocket = new ServerSocket(8989);) {
             while (true) {
                 try (Socket socket = serverSocket.accept();
-                     BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                     PrintWriter out = new PrintWriter(socket.getOutputStream());) {
-                    String stringFromSocket = in.readLine();
+                     BufferedReader serverIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                     PrintWriter serverOut = new PrintWriter(socket.getOutputStream(), true);) {
+                    String stringFromSocket = serverIn.readLine();
+                    System.out.println("сервер: " + stringFromSocket);
 
                     Product product = gson.fromJson(stringFromSocket, Product.class);
                     if (information.buyProduct(product)) {
-                        out.println(gson.toJson(information.GetReport()));
+                        serverOut.println(gson.toJson(information.GetReport()));
+                    }
+                    else {
+                        serverOut.println(" ");
                     }
                 }
             }

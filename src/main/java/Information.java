@@ -22,7 +22,9 @@ public class Information {
 
     private void SaveInformation(){
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(saveFile));){
-            objectOutputStream.writeObject(products);
+            if (products != null) {
+                objectOutputStream.writeObject(products);
+            }
         } catch (IOException e) {
             System.out.println("Не могу сохранить информацию");
         }
@@ -37,6 +39,9 @@ public class Information {
             System.out.println("Не могу загрузить информацию");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
+        }
+        if (products == null){
+            products = new ArrayList<>();
         }
     }
 
