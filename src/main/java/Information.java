@@ -1,15 +1,19 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Information {
     final private String categoriesFile = "categories.tsv";
     final private String saveFile = "data.bin";
     private Map<String, String> itemsForBuy;
-    private ArrayList<Product> products;
+    private Collection<String> Categories;
+    private ArrayList<Inf> products;
     protected void ParseCategories() throws IOException {
+        itemsForBuy = new HashMap<>();
         try(BufferedReader bufReader = new BufferedReader(new FileReader(categoriesFile))){
             String line;
             while ((line = bufReader.readLine()) != null)
@@ -18,6 +22,8 @@ public class Information {
                 itemsForBuy.put(words[0], words[1]);
             }
         }
+        itemsForBuy.put("другое", "другое");
+        Categories = itemsForBuy.values().stream().distinct().collect(Collectors.toList());
     }
 
     private void SaveInformation(){
@@ -32,7 +38,7 @@ public class Information {
 
     private void LoadInformation(){
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(saveFile));){
-            products = (ArrayList<Product>)objectInputStream.readObject();
+            products = (ArrayList<Inf>)objectInputStream.readObject();
         } catch (FileNotFoundException e) {
             System.out.println("Ранее сохранённая информация не найдена");
         } catch (IOException e) {
@@ -46,27 +52,68 @@ public class Information {
     }
 
     public Information() throws IOException {
-        itemsForBuy = new HashMap<>();
         ParseCategories();
         LoadInformation();
     }
 
-    public boolean buyProduct(Product product){
+    Category getMaxCategoryReportForPeriod(String date) {
+        Map<String, Integer> spendByCategory = products.stream()
+                .filter(p -> date == null || p.getDate().startsWith(date))
+                .collect(Collectors.groupingBy(Inf::getCategory, Collectors.summingInt(Inf::getSum)));
+        Map.Entry<String, Integer> spendMax = null;
+        for (Map.Entry<String, Integer> spend : spendByCategory.entrySet()) {
+            if (spendMax == null) {
+                spendMax = spend;
+            } else {
+                if (spendMax.getValue() < spend.getValue()) {
+                    spendMax = spend;
+                }
+            }
+        }
+
+        return spendMax == null ? null : new Category(spendMax.getKey(), spendMax.getValue());
+    }
+
+    private Inf infProduct(Product p){
+        String categ = itemsForBuy.get(p.getTitle());
+        if (categ == null) {
+            categ = "другое";
+        }
+
+        return new Inf(categ, p.getDate(), p.getSum());
+    }
+
+    public Report buyProduct(Product product){
         if (product == null){
-            return false;
+            return null;
         }
 
         if (!Pattern.matches("^\\d{4}[.]\\d{2}[.]\\d{2}$", product.getDate())){
-            return false;
+            return null;
         }
 
-        products.add(product);
-        SaveInformation();
-        return true;
-    }
+        Inf info = infProduct(product);
+        boolean foundMatchedProduct = false;
+        for (Inf p : products) {
+            if (p.getCategory().equals(info.getCategory()) && p.getDate().equals(info.getDate())){
+                p.total(info.getSum());
+                foundMatchedProduct = true;
+                break;
+            }
+        }
+        if (!foundMatchedProduct) {
+            products.add(info);
+        }
 
-    public Report GetReport() {
-        Report report = new Report();
+
+    Category maxCategory = getMaxCategoryReportForPeriod(null);
+    Category maxYearCategory = getMaxCategoryReportForPeriod(product.getDate().substring(0, 4));
+    Category maxMonthCategory = getMaxCategoryReportForPeriod(product.getDate().substring(0, 7));
+    Category maxDayCategory = getMaxCategoryReportForPeriod(product.getDate());
+
+    Report report = new Report(maxCategory, maxYearCategory, maxMonthCategory, maxDayCategory);
+
+    SaveInformation();
 
         return report;
     }
