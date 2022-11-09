@@ -24,8 +24,9 @@ public class Server {
                     System.out.println("сервер: " + stringFromSocket);
 
                     Product product = gson.fromJson(stringFromSocket, Product.class);
-                    if (information.buyProduct(product)) {
-                        serverOut.println(gson.toJson(information.GetReport()));
+                    Report report = information.buyProduct(product);
+                    if (report != null) {
+                        serverOut.println(gson.toJson(report));
                     }
                     else {
                         serverOut.println(" ");
