@@ -27,8 +27,7 @@ public class Server {
                     Report report = information.buyProduct(product);
                     if (report != null) {
                         serverOut.println(gson.toJson(report));
-                    }
-                    else {
+                    } else {
                         serverOut.println(" ");
                     }
                 }

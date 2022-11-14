@@ -10,23 +10,22 @@ public class Information {
     final private String categoriesFile = "categories.tsv";
     final private String saveFile = "data.bin";
     private Map<String, String> itemsForBuy;
-    private Collection<String> Categories;
+    private Collection<String> categories;
     private ArrayList<Inf> products;
-    protected void ParseCategories() throws IOException {
+    protected void parseCategories() throws IOException {
         itemsForBuy = new HashMap<>();
         try(BufferedReader bufReader = new BufferedReader(new FileReader(categoriesFile))){
             String line;
-            while ((line = bufReader.readLine()) != null)
-            {
+            while ((line = bufReader.readLine()) != null) {
                 String[] words = line.split("\t");
                 itemsForBuy.put(words[0], words[1]);
             }
         }
         itemsForBuy.put("другое", "другое");
-        Categories = itemsForBuy.values().stream().distinct().collect(Collectors.toList());
+        categories = itemsForBuy.values().stream().distinct().collect(Collectors.toList());
     }
 
-    private void SaveInformation(){
+    private void saveInformation(){
         try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(saveFile));){
             if (products != null) {
                 objectOutputStream.writeObject(products);
@@ -36,7 +35,7 @@ public class Information {
         }
     }
 
-    private void LoadInformation(){
+    private void loadInformation(){
         try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(saveFile));){
             products = (ArrayList<Inf>)objectInputStream.readObject();
         } catch (FileNotFoundException e) {
@@ -52,8 +51,8 @@ public class Information {
     }
 
     public Information() throws IOException {
-        ParseCategories();
-        LoadInformation();
+        parseCategories();
+        loadInformation();
     }
 
     Category getMaxCategoryReportForPeriod(String date) {
@@ -113,7 +112,7 @@ public class Information {
 
     Report report = new Report(maxCategory, maxYearCategory, maxMonthCategory, maxDayCategory);
 
-    SaveInformation();
+    saveInformation();
 
         return report;
     }
